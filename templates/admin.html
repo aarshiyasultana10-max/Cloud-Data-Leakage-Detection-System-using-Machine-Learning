@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h2>Admin Panel</h2>
+    <p>User management, quarantine control, and ML model performance metrics</p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="stat-card green"><div class="stat-num">{{ users|length }}</div><div class="stat-label">Total Users</div></div></div>
+    <div class="col-md-3"><div class="stat-card blue"><div class="stat-num" style="color:#7eb3ff;">{{ files|length }}</div><div class="stat-label">Total Files</div></div></div>
+    <div class="col-md-3"><div class="stat-card red"><div class="stat-num" style="color:#ff6b84;">{{ logs|length }}</div><div class="stat-label">Security Events</div></div></div>
+    <div class="col-md-3"><div class="stat-card purple"><div class="stat-num" style="color:#a78bfa;">{{ quarantined|length }}</div><div class="stat-label">Quarantined Files</div></div></div>
+</div>
+
+<!-- ML Model Metrics -->
+<div class="card mb-4">
+    <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">🤖 ML Model Comparison — Accuracy / Precision / Recall / F1</div>
+    <div class="row g-3">
+        {% for model_name, m in model_metrics.items() %}
+        <div class="col-md-4">
+            <div class="card" style="background:var(--surface2);border-color:{% if loop.first %}rgba(0,255,136,.3){% else %}rgba(59,130,246,.2){% endif %};">
+                <div style="font-size:.76rem;font-weight:700;margin-bottom:12px;color:{% if loop.first %}var(--accent){% else %}#7eb3ff{% endif %};">
+                    {{ model_name }} {% if loop.first %}<span class="tag tag-safe" style="font-size:.58rem;margin-left:4px;">PRIMARY</span>{% endif %}
+                </div>
+                {% for label, val in [('Accuracy', m.accuracy), ('Precision', m.precision), ('Recall', m.recall), ('F1 Score', m.f1)] %}
+                <div style="margin-bottom:8px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                        <span style="font-size:.68rem;color:var(--muted);font-family:'Space Mono',monospace;">{{ label }}</span>
+                        <span style="font-size:.72rem;font-weight:700;color:{% if val >= 80 %}#00ff88{% elif val >= 60 %}#fbbf24{% else %}#ff6b84{% endif %};">{{ val }}%</span>
+                    </div>
+                    <div style="height:4px;background:var(--surface);border-radius:2px;overflow:hidden;">
+                        <div style="height:100%;width:{{ val }}%;background:{% if val >= 80 %}#00ff88{% elif val >= 60 %}#f59e0b{% else %}#ff3b5c{% endif %};border-radius:2px;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+                <!-- Confusion Matrix -->
+                <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
+                    <div style="font-size:.64rem;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:6px;">CONFUSION MATRIX</div>
+                    <table style="width:100%;text-align:center;font-size:.66rem;font-family:'Space Mono',monospace;border-collapse:collapse;">
+                        <tr>
+                            <td style="padding:2px;color:var(--muted);"></td>
+                            <td style="padding:2px;color:var(--muted);">Pred Leak</td>
+                            <td style="padding:2px;color:var(--muted);">Pred Safe</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:2px;color:var(--muted);">Act Leak</td>
+                            <td style="padding:4px;background:rgba(0,255,136,.15);color:#00ff88;border-radius:4px;">{{ m.cm[0][0] }}</td>
+                            <td style="padding:4px;background:rgba(255,59,92,.1);color:#ff6b84;border-radius:4px;">{{ m.cm[0][1] }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:2px;color:var(--muted);">Act Safe</td>
+                            <td style="padding:4px;background:rgba(255,59,92,.1);color:#ff6b84;border-radius:4px;">{{ m.cm[1][0] }}</td>
+                            <td style="padding:4px;background:rgba(0,255,136,.15);color:#00ff88;border-radius:4px;">{{ m.cm[1][1] }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Quarantine Queue -->
+{% if quarantined %}
+<div class="card mb-4" style="border-color:rgba(245,158,11,.3);">
+    <div style="font-size:.7rem;font-weight:700;color:#fbbf24;font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;">🔒 Quarantine Queue ({{ quarantined|length }} file(s))</div>
+    <table class="table-dark-custom">
+        <thead><tr><th>ID</th><th>Filename</th><th>Owner</th><th>Risk</th><th>Detections</th><th>Date</th><th>Action</th></tr></thead>
+        <tbody>
+        {% for f in quarantined %}
+        {% set risk = f['risk_score'] if f['risk_score'] else 0 %}
+        <tr>
+            <td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:.73rem;">{{ f['id'] }}</td>
+            <td style="font-family:'Space Mono',monospace;font-size:.76rem;">{{ f['filename'][:28] }}</td>
+            <td style="font-size:.8rem;">{{ f['owner'] }}</td>
+            <td><span style="color:{% if risk >= 61 %}#ff6b84{% elif risk >= 31 %}#fbbf24{% else %}#00ff88{% endif %};font-family:'Space Mono',monospace;font-size:.76rem;">{{ risk }}/100</span></td>
+            <td style="font-size:.74rem;">{{ f['rule_detections'][:40] if f['rule_detections'] else '—' }}</td>
+            <td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:.7rem;">{{ f['uploaded_at'][:16] if f['uploaded_at'] else '—' }}</td>
+            <td><a href="/admin/release_quarantine/{{ f['id'] }}" class="btn-outline" style="font-size:.7rem;padding:4px 10px;" onclick="return confirm('Release file from quarantine?')">Release</a></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- User Management -->
+<div class="card mb-4">
+    <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;">User Management</div>
+    <table class="table-dark-custom">
+        <thead><tr><th>ID</th><th>Username</th><th>Role</th><th>Status</th><th>Failed</th><th>Created</th><th>Actions</th></tr></thead>
+        <tbody>
+        {% for u in users %}
+        <tr>
+            <td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:.73rem;">{{ u['id'] }}</td>
+            <td style="font-weight:600;font-size:.82rem;">{{ u['username'] }}</td>
+            <td><span class="tag tag-info">{{ u['role'] }}</span></td>
+            <td>{% if u['locked'] %}<span class="tag tag-leak">Locked</span>{% else %}<span class="tag tag-safe">Active</span>{% endif %}</td>
+            <td style="font-family:'Space Mono',monospace;font-size:.78rem;">{{ u['failed_attempts'] }}/3</td>
+            <td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:.7rem;">{{ u['created_at'][:10] if u['created_at'] else '—' }}</td>
+            <td style="display:flex;gap:5px;">
+                {% if u['locked'] %}<a href="/admin/unlock_user/{{ u['id'] }}" class="btn-accent" style="font-size:.7rem;padding:4px 9px;">Unlock</a>{% endif %}
+                {% if u['username'] != 'admin' %}<a href="/admin/delete_user/{{ u['id'] }}" class="btn-danger-custom" style="font-size:.7rem;padding:4px 9px;" onclick="return confirm('Delete user?')">Delete</a>{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- All Files -->
+<div class="card mb-4">
+    <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;">All Scanned Files</div>
+    <table class="table-dark-custom">
+        <thead><tr><th>ID</th><th>Filename</th><th>Owner</th><th>Status</th><th>Risk</th><th>ML</th><th>Conf.</th><th>Q</th><th>Date</th></tr></thead>
+        <tbody>
+        {% for f in files %}
+        {% set risk = f['risk_score'] if f['risk_score'] else 0 %}
+        <tr>
+            <td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:.73rem;">{{ f['id'] }}</td>
+            <td style="font-family:'Space Mono',monospace;font-size:.76rem;">{{ f['filename'][:24] }}</td>
+            <td style="font-size:.8rem;">{{ f['owner'] }}</td>
+            <td><span class="tag {% if f['status']=='Leak' %}tag-leak{% else %}tag-safe{% endif %}" style="font-size:.64rem;">{{ f['status'] }}</span></td>
+            <td><span style="font-family:'Space Mono',monospace;font-size:.74rem;color:{% if risk >= 61 %}#ff6b84{% elif risk >= 31 %}#fbbf24{% else %}#00ff88{% endif %};">{{ risk }}</span></td>
+            <td><span class="tag tag-info" style="font-size:.62rem;">{{ f['ml_prediction'] }}</span></td>
+            <td style="font-family:'Space Mono',monospace;font-size:.76rem;">{{ f['confidence'] }}%</td>
+            <td>{% if f['quarantined'] %}<span style="color:#fbbf24;font-size:.8rem;">🔒</span>{% else %}<span style="color:var(--muted);">—</span>{% endif %}</td>
+            <td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:.7rem;">{{ f['uploaded_at'][:16] if f['uploaded_at'] else '—' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Security Logs -->
+<div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;">Recent Security Events</div>
+        <a href="/attack_log" class="btn-outline" style="font-size:.72rem;padding:5px 12px;">View All</a>
+    </div>
+    <table class="table-dark-custom">
+        <thead><tr><th>ID</th><th>Event</th><th>User</th><th>IP</th><th>Severity</th><th>Time</th></tr></thead>
+        <tbody>
+        {% for log in logs %}
+        <tr>
+            <td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:.73rem;">{{ log['id'] }}</td>
+            <td style="font-size:.78rem;max-width:200px;">{{ log['event'][:50] }}</td>
+            <td style="font-size:.78rem;">{{ log['username'] }}</td>
+            <td style="font-family:'Space Mono',monospace;font-size:.7rem;color:var(--muted);">{{ log['ip'] }}</td>
+            <td><span class="tag {% if log['severity']=='critical' %}tag-critical{% elif log['severity']=='high' %}tag-leak{% elif log['severity']=='medium' %}tag-warn{% else %}tag-info{% endif %}">{{ log['severity'] }}</span></td>
+            <td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:.7rem;">{{ log['timestamp'][:16] if log['timestamp'] else '—' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

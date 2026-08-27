@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h2>Upload & Scan</h2>
+    <p>Rule-based + ML + NER analysis with risk scoring & auto-quarantine</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">Select File</div>
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                <div id="dropZone" style="border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;margin-bottom:16px;transition:all .2s;cursor:pointer;">
+                    <div style="font-size:2rem;margin-bottom:8px;">📂</div>
+                    <div style="font-size:.86rem;font-weight:700;margin-bottom:4px;">Drop file here or click to browse</div>
+                    <div style="font-size:.7rem;color:var(--muted);font-family:'Space Mono',monospace;">Supports .txt .csv .pdf .docx and more</div>
+                    <input type="file" name="file" id="fileInput" style="display:none;" required>
+                </div>
+                <div id="fileName" style="font-size:.76rem;color:var(--accent);font-family:'Space Mono',monospace;margin-bottom:12px;display:none;">📄 <span id="fName"></span></div>
+                <button class="btn-accent" type="submit" id="scanBtn" style="width:100%;padding:12px;font-size:.88rem;">⟳ Run DLP Scan</button>
+            </form>
+            <div id="loadingSpinner" style="display:none;text-align:center;padding:26px;">
+                <div style="width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px;"></div>
+                <div style="font-size:.78rem;color:var(--muted);font-family:'Space Mono',monospace;">Scanning file...</div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;">Detection Capabilities</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                {% for rule, desc in [('Email','user@domain.com pattern'),('Phone','Indian 10-digit numbers'),('Credit Card','16-digit card numbers'),('Aadhaar','12-digit format'),('PAN Card','ABCDE1234F format'),('Passport','Indian passport pattern'),('SSN','000-00-0000 format'),('Bank Account','9–18 digit numbers'),('API Key','sk_live_, AKIA, ghp_ tokens'),('JWT Token','eyJ... format detection'),('Voter ID','ABC1234567 format'),('Env Secret','DB_PASSWORD, SECRET_KEY'),('Private Key','RSA/EC PEM detection'),('ML Model','Random Forest classifier'),('NER','spaCy named entity detection')] %}
+                <div style="display:flex;align-items:center;gap:8px;font-size:.78rem;">
+                    <span class="tag tag-info">{{ rule }}</span>
+                    <span style="color:var(--muted);">{{ desc }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card" style="min-height:200px;">
+            <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">Scan Results</div>
+
+            {% if status %}
+                {% if fname %}
+                <div style="font-size:.76rem;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:12px;">📄 {{ fname }}</div>
+                {% endif %}
+
+                <!-- Risk Score Gauge -->
+                {% set risk = risk_score if risk_score else 0 %}
+                <div class="card mb-3" style="background:var(--surface2);border-color:{% if risk >= 61 %}rgba(255,59,92,.3){% elif risk >= 31 %}rgba(245,158,11,.3){% else %}rgba(0,255,136,.3){% endif %};">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                        <div style="font-size:.68rem;color:var(--muted);font-family:'Space Mono',monospace;">RISK SCORE</div>
+                        <span style="font-size:.7rem;font-weight:700;color:{% if risk >= 61 %}#ff6b84{% elif risk >= 31 %}#fbbf24{% else %}#00ff88{% endif %};">
+                            {% if risk >= 61 %}HIGH RISK{% elif risk >= 31 %}MEDIUM RISK{% else %}LOW RISK{% endif %}
+                        </span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <div style="font-size:2.4rem;font-weight:800;color:{% if risk >= 61 %}#ff6b84{% elif risk >= 31 %}#fbbf24{% else %}#00ff88{% endif %};">{{ risk }}</div>
+                        <div style="flex:1;">
+                            <div style="font-size:.7rem;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:4px;">out of 100</div>
+                            <div style="height:8px;background:var(--surface);border-radius:4px;overflow:hidden;">
+                                <div style="height:100%;width:{{ risk }}%;background:{% if risk >= 61 %}#ff3b5c{% elif risk >= 31 %}#f59e0b{% else %}#00ff88{% endif %};border-radius:4px;transition:width .8s ease;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if result %}
+                <div class="alert-leak mb-3">
+                    <div style="font-weight:800;margin-bottom:8px;">🚨 Rule-Based Detections ({{ result|length }})</div>
+                    <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                        {% for item in result %}<span class="tag tag-leak">{{ item }}</span>{% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert-safe mb-3">✅ No rule-based patterns detected</div>
+                {% endif %}
+
+                {% if ml %}
+                <div class="{% if ml=='leak' %}alert-leak{% else %}alert-safe{% endif %} mb-3">
+                    <div style="font-weight:800;margin-bottom:8px;">🤖 ML Prediction (Random Forest)</div>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span class="tag {% if ml=='leak' %}tag-leak{% else %}tag-safe{% endif %}" style="font-size:.78rem;padding:3px 10px;">{{ ml.upper() }}</span>
+                        {% if confidence %}
+                        <div style="flex:1;">
+                            <div style="font-size:.7rem;color:var(--muted);margin-bottom:3px;font-family:'Space Mono',monospace;">Confidence: {{ confidence }}%</div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" style="width:{{ confidence }}%;background:{% if ml=='leak' %}#ff3b5c{% else %}#00ff88{% endif %};"></div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if ner_entities %}
+                <div class="alert-purple mb-3">
+                    <div style="font-weight:800;margin-bottom:8px;">🧠 NER Entities Detected</div>
+                    <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                        {% for ent in ner_entities %}<span class="tag tag-purple" style="font-size:.7rem;">{{ ent }}</span>{% endfor %}
+                    </div>
+                </div>
+                {% elif spacy_available %}
+                <div class="alert-info-custom mb-3">🧠 NER: No named entities found</div>
+                {% endif %}
+
+                {% if quarantined %}
+                <div class="alert-warn mb-3">
+                    🔒 File automatically <strong>quarantined</strong> — Admin review required
+                </div>
+                {% endif %}
+
+                <div style="padding-top:14px;border-top:1px solid var(--border);">
+                    <div style="font-size:.66rem;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:8px;">FINAL VERDICT</div>
+                    {% if status == 'Leak' %}
+                    <span class="tag tag-leak" style="font-size:.88rem;padding:7px 16px;">⚠ DATA LEAK DETECTED</span>
+                    {% else %}
+                    <span class="tag tag-safe" style="font-size:.88rem;padding:7px 16px;">✓ FILE IS SAFE</span>
+                    {% endif %}
+                </div>
+
+            {% else %}
+            <div style="color:var(--muted);font-size:.82rem;text-align:center;padding:44px 0;font-family:'Space Mono',monospace;line-height:2;">
+                No scan results yet.<br>Upload a file to begin.
+            </div>
+            {% endif %}
+        </div>
+
+        {% if status %}
+        <div class="card mt-3">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <a href="/history" class="btn-blue" style="font-size:.78rem;padding:7px 14px;">View History</a>
+                <a href="/upload" class="btn-outline" style="font-size:.78rem;padding:7px 14px;">Scan Another</a>
+                <a href="/scan-text" class="btn-outline" style="font-size:.78rem;padding:7px 14px;">Text Scanner</a>
+                <a href="/export/pdf" class="btn-outline" style="font-size:.78rem;padding:7px 14px;">Export PDF</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const scanBtn = document.getElementById('scanBtn');
+const spinner = document.getElementById('loadingSpinner');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor='var(--accent)'; });
+dropZone.addEventListener('dragleave', () => dropZone.style.borderColor='var(--border)');
+dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.style.borderColor='var(--border)';
+    fileInput.files = e.dataTransfer.files; updateLabel();
+});
+fileInput.addEventListener('change', updateLabel);
+
+function updateLabel() {
+    if(fileInput.files[0]) {
+        document.getElementById('fName').textContent = fileInput.files[0].name;
+        document.getElementById('fileName').style.display = 'block';
+        dropZone.style.borderColor = 'var(--accent)';
+    }
+}
+document.getElementById('uploadForm').addEventListener('submit', () => {
+    scanBtn.style.display='none'; spinner.style.display='block';
+});
+{% if status %}showToast('Scan complete: {{ status }} | Risk: {{ risk_score }}/100', '{{ "error" if status=="Leak" else "success" }}');{% endif %}
+</script>
+{% endblock %}

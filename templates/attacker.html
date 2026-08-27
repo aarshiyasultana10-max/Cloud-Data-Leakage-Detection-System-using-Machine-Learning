@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h2>Attack Simulation</h2>
+    <p>Security defense testing</p>
+</div>
+<div class="card" style="border-color:rgba(255,59,92,.3);max-width:600px;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+        <div style="width:50px;height:50px;background:rgba(255,59,92,.12);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;border:1px solid rgba(255,59,92,.2);">⚠</div>
+        <div>
+            <div style="font-size:1rem;font-weight:800;color:#ff6b84;">Unauthorized Access Detected</div>
+            <div style="font-size:.72rem;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px;">SECURITY ALERT — LOGGED AND BLOCKED</div>
+        </div>
+    </div>
+    <div style="background:rgba(255,59,92,.06);border:1px solid rgba(255,59,92,.15);border-radius:8px;padding:16px;font-family:'Space Mono',monospace;font-size:.76rem;color:var(--muted);line-height:2;">
+        <div><span style="color:#ff6b84;">EVENT   </span> Unauthorized access attempt</div>
+        <div><span style="color:#ff6b84;">USER    </span> {{ session.get('user', 'unknown') }}</div>
+        <div><span style="color:#ff6b84;">STATUS  </span> Blocked by DLP Shield</div>
+        <div><span style="color:#ff6b84;">ACTION  </span> Incident logged to audit trail</div>
+    </div>
+    <div style="margin-top:20px;display:flex;gap:10px;">
+        <a href="/dashboard" class="btn-accent" style="font-size:.82rem;padding:9px 18px;">← Return to Dashboard</a>
+        <a href="/attack_log" class="btn-outline" style="font-size:.82rem;padding:9px 18px;">View Attack Logs</a>
+    </div>
+</div>
+{% block scripts %}
+<script>showToast('Security event logged!', 'error');</script>
+{% endblock %}
+{% endblock %}

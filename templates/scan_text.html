@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h2>Text Scanner</h2>
+    <p>Paste any text for instant PII, secret, and data leak detection</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;">Input Text</div>
+            <form method="POST" id="textForm">
+                <textarea name="text_input" id="textArea" rows="12" placeholder="Paste any text here — email addresses, Aadhaar numbers, API keys, passwords, credit cards, JWT tokens...
+
+Example: My email is john@example.com and my aadhaar is 1234 5678 9012. Bank account: 987654321012" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:12px;font-family:'Space Mono',monospace;font-size:.78rem;outline:none;resize:vertical;transition:border-color .2s;line-height:1.7;">{{ text_input }}</textarea>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+                    <span id="charCount" style="font-size:.68rem;color:var(--muted);font-family:'Space Mono',monospace;">0 characters</span>
+                    <div style="display:flex;gap:8px;">
+                        <button type="button" onclick="clearText()" class="btn-outline" style="font-size:.76rem;padding:7px 14px;">Clear</button>
+                        <button class="btn-accent" type="submit" style="font-size:.82rem;padding:8px 20px;">⟳ Scan Text</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="card mt-3">
+            <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Try these examples</div>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+                <button onclick="fillExample('My email is test@example.com and credit card is 4532 1234 5678 9012')" class="btn-outline" style="font-size:.74rem;padding:6px 12px;text-align:left;">→ Email + Credit Card</button>
+                <button onclick="fillExample('Aadhaar: 1234 5678 9012, PAN: ABCDE1234F, Mobile: 9876543210')" class="btn-outline" style="font-size:.74rem;padding:6px 12px;text-align:left;">→ Indian PII (Aadhaar + PAN)</button>
+                <button onclick="fillExample('DB_PASSWORD=admin123 and AWS_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE')" class="btn-outline" style="font-size:.74rem;padding:6px 12px;text-align:left;">→ Env Secrets / API Keys</button>
+                <button onclick="fillExample('Normal office meeting notes for the Q3 planning session. No sensitive data here.')" class="btn-outline" style="font-size:.74rem;padding:6px 12px;text-align:left;">→ Safe text (should pass)</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card" style="min-height:200px;">
+            <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">Detection Results</div>
+
+            {% if status %}
+                <!-- Risk Score -->
+                {% set risk = risk_score if risk_score else 0 %}
+                <div class="card mb-3" style="background:var(--surface2);border-color:{% if risk >= 61 %}rgba(255,59,92,.3){% elif risk >= 31 %}rgba(245,158,11,.3){% else %}rgba(0,255,136,.3){% endif %};">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                        <div style="font-size:.66rem;color:var(--muted);font-family:'Space Mono',monospace;">RISK SCORE</div>
+                        <span class="tag {% if risk >= 61 %}tag-leak{% elif risk >= 31 %}tag-warn{% else %}tag-safe{% endif %}">
+                            {% if risk >= 61 %}HIGH{% elif risk >= 31 %}MEDIUM{% else %}LOW{% endif %}
+                        </span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="font-size:2.2rem;font-weight:800;color:{% if risk >= 61 %}#ff6b84{% elif risk >= 31 %}#fbbf24{% else %}#00ff88{% endif %};">{{ risk }}</div>
+                        <div style="flex:1;">
+                            <div style="height:7px;background:var(--surface);border-radius:4px;overflow:hidden;">
+                                <div style="height:100%;width:{{ risk }}%;background:{% if risk >= 61 %}#ff3b5c{% elif risk >= 31 %}#f59e0b{% else %}#00ff88{% endif %};border-radius:4px;"></div>
+                            </div>
+                            <div style="font-size:.66rem;color:var(--muted);font-family:'Space Mono',monospace;margin-top:3px;">out of 100</div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if result %}
+                <div class="alert-leak mb-3">
+                    <div style="font-weight:800;margin-bottom:8px;">🚨 Patterns Detected ({{ result|length }})</div>
+                    <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                        {% for item in result %}<span class="tag tag-leak">{{ item }}</span>{% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert-safe mb-3">✅ No sensitive patterns detected</div>
+                {% endif %}
+
+                {% if ml %}
+                <div class="{% if ml=='leak' %}alert-leak{% else %}alert-safe{% endif %} mb-3">
+                    <div style="font-weight:800;margin-bottom:6px;">🤖 ML: {{ ml.upper() }} ({{ confidence }}%)</div>
+                    <div class="progress-bar-custom">
+                        <div class="progress-fill" style="width:{{ confidence }}%;background:{% if ml=='leak' %}#ff3b5c{% else %}#00ff88{% endif %};"></div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if ner_entities %}
+                <div class="alert-purple mb-3">
+                    <div style="font-weight:800;margin-bottom:8px;">🧠 Named Entities (spaCy NER)</div>
+                    <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                        {% for ent in ner_entities %}<span class="tag tag-purple" style="font-size:.68rem;">{{ ent }}</span>{% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div style="padding-top:12px;border-top:1px solid var(--border);">
+                    <div style="font-size:.66rem;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:6px;">VERDICT</div>
+                    {% if status == 'Leak' %}
+                    <span class="tag tag-leak" style="font-size:.86rem;padding:6px 14px;">⚠ LEAK DETECTED</span>
+                    {% else %}
+                    <span class="tag tag-safe" style="font-size:.86rem;padding:6px 14px;">✓ SAFE</span>
+                    {% endif %}
+                </div>
+
+            {% else %}
+            <div style="color:var(--muted);font-size:.82rem;text-align:center;padding:50px 0;font-family:'Space Mono',monospace;line-height:2;">
+                Paste text and click Scan Text<br>to detect sensitive data.
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card mt-3">
+            <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">API Usage</div>
+            <div style="font-family:'Space Mono',monospace;font-size:.72rem;color:var(--muted);line-height:1.8;background:var(--surface2);border-radius:8px;padding:12px;">
+                <span style="color:#7eb3ff;">POST</span> /api/scan<br>
+                Content-Type: application/json<br><br>
+                <span style="color:var(--accent);">{"text": "your text here"}</span>
+            </div>
+            <a href="/api/docs" class="btn-outline mt-2" style="font-size:.76rem;padding:6px 14px;">View API Docs →</a>
+        </div>
+    </div>
+</div>
+
+<script>
+const ta = document.getElementById('textArea');
+const cc = document.getElementById('charCount');
+ta.addEventListener('input', () => cc.textContent = ta.value.length + ' characters');
+cc.textContent = ta.value.length + ' characters';
+ta.addEventListener('focus', () => ta.style.borderColor='var(--accent)');
+ta.addEventListener('blur', () => ta.style.borderColor='var(--border)');
+
+function fillExample(text) { ta.value = text; cc.textContent = text.length + ' characters'; ta.focus(); }
+function clearText() { ta.value=''; cc.textContent='0 characters'; }
+{% if status %}showToast('Text scan: {{ status }} | Risk: {{ risk_score }}/100', '{{ "error" if status=="Leak" else "success" }}');{% endif %}
+</script>
+{% endblock %}

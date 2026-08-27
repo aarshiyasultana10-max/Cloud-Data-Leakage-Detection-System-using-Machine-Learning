@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h2>Attack Logs</h2>
+    <p>Security events with search, filter, and severity breakdown</p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="stat-card red"><div class="stat-num" style="color:#ff6b84;">{{ total }}</div><div class="stat-label">Total Events</div></div></div>
+    <div class="col-md-4"><div class="stat-card red"><div class="stat-num" style="color:#ff4444;">{{ critical }}</div><div class="stat-label">Critical</div></div></div>
+    <div class="col-md-4"><div class="stat-card yellow"><div class="stat-num" style="color:#fbbf24;">{{ high }}</div><div class="stat-label">High Severity</div></div></div>
+</div>
+
+<div class="card">
+    <form method="GET" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+        <input name="search" placeholder="Search events or users..." value="{{ search }}"
+               style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 12px;font-size:.78rem;font-family:'Syne',sans-serif;outline:none;flex:1;min-width:160px;">
+        <select name="severity" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 12px;font-size:.78rem;font-family:'Syne',sans-serif;outline:none;">
+            <option value="" {% if not severity_filter %}selected{% endif %}>All Severity</option>
+            <option value="critical" {% if severity_filter=='critical' %}selected{% endif %}>Critical</option>
+            <option value="high" {% if severity_filter=='high' %}selected{% endif %}>High</option>
+            <option value="medium" {% if severity_filter=='medium' %}selected{% endif %}>Medium</option>
+            <option value="low" {% if severity_filter=='low' %}selected{% endif %}>Low</option>
+        </select>
+        <button type="submit" class="btn-accent" style="font-size:.78rem;padding:7px 16px;">Filter</button>
+        <a href="/attack_log" class="btn-outline" style="font-size:.78rem;padding:7px 14px;">Clear</a>
+    </form>
+
+    {% if logs %}
+    <table class="table-dark-custom" id="logTable">
+        <thead><tr><th>#</th><th>Event</th><th>User</th><th>IP Address</th><th>Severity</th><th>Timestamp</th></tr></thead>
+        <tbody>
+        {% for log in logs %}
+        <tr class="log-row">
+            <td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:.73rem;">{{ log['id'] }}</td>
+            <td style="font-size:.78rem;max-width:260px;">{{ log['event'] }}</td>
+            <td style="font-size:.8rem;">{{ log['username'] }}</td>
+            <td style="font-family:'Space Mono',monospace;font-size:.7rem;color:var(--muted);">{{ log['ip'] }}</td>
+            <td>
+                <span class="tag {% if log['severity']=='critical' %}tag-critical{% elif log['severity']=='high' %}tag-leak{% elif log['severity']=='medium' %}tag-warn{% else %}tag-info{% endif %}">
+                    {{ log['severity'].upper() }}
+                </span>
+            </td>
+            <td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:.7rem;">{{ log['timestamp'][:16] if log['timestamp'] else '—' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <div style="margin-top:12px;font-size:.7rem;color:var(--muted);font-family:'Space Mono',monospace;">Showing {{ logs|length }} result(s)</div>
+    {% else %}
+    <div style="text-align:center;padding:40px;color:var(--muted);font-family:'Space Mono',monospace;font-size:.82rem;">No security events match your filter.</div>
+    {% endif %}
+</div>
+{% endblock %}

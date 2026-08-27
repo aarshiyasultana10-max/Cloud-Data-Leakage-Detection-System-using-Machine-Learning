@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DLP Shield — Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg:#0a0c10;--surface:#111318;--surface2:#1a1d24;--border:#2a2d35;--accent:#00ff88;--accent2:#ff3b5c;--text:#e8eaf0;--muted:#6b7280;}
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+        .bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,136,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,.04) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;}
+        .glow{position:fixed;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(0,255,136,.05) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
+        .wrap{position:relative;z-index:10;width:100%;max-width:420px;padding:0 20px;}
+        .brand{text-align:center;margin-bottom:36px;}
+        .shield{width:50px;height:50px;background:var(--accent);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);margin:0 auto 14px;}
+        .brand h1{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;}
+        .brand p{color:var(--muted);font-size:.7rem;font-family:'Space Mono',monospace;letter-spacing:.1em;text-transform:uppercase;margin-top:4px;}
+        .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:30px;}
+        label{display:block;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-family:'Space Mono',monospace;}
+        input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:11px 13px;font-family:'Syne',sans-serif;font-size:.88rem;outline:none;transition:border-color .2s;margin-bottom:16px;}
+        input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,255,136,.08);}
+        input::placeholder{color:var(--muted);}
+        .btn{width:100%;background:var(--accent);color:#000;border:none;padding:13px;border-radius:8px;font-weight:800;font-size:.9rem;cursor:pointer;transition:all .15s;font-family:'Syne',sans-serif;margin-top:4px;}
+        .btn:hover{background:#00cc6e;transform:translateY(-1px);}
+        .error{background:rgba(255,59,92,.08);border:1px solid rgba(255,59,92,.3);border-radius:8px;padding:11px 14px;color:#ff6b84;font-size:.82rem;margin-bottom:14px;}
+        .link{text-align:center;margin-top:18px;font-size:.82rem;color:var(--muted);}
+        .link a{color:var(--accent);text-decoration:none;font-weight:600;}
+        .scanline{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,.01) 2px,rgba(0,255,136,.01) 4px);pointer-events:none;}
+        .attempts{display:flex;gap:6px;margin-bottom:14px;}
+        .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);}
+        .dot.used{background:var(--accent2);}
+    </style>
+</head>
+<body>
+<div class="bg-grid"></div><div class="glow"></div><div class="scanline"></div>
+<div class="wrap">
+    <div class="brand">
+        <div class="shield"></div>
+        <h1>DLP Shield</h1>
+        <p>Secure Data Leak Prevention System</p>
+    </div>
+    <div class="card">
+        {% if error %}
+        <div class="error">⚠ {{ error }}</div>
+        {% endif %}
+        <form method="POST">
+            <label>Username</label>
+            <input name="username" placeholder="Enter username" autocomplete="off" required>
+            <label>Password</label>
+            <input name="password" type="password" placeholder="Enter password" required>
+            <button class="btn" type="submit">Sign In →</button>
+        </form>
+    </div>
+    <div class="link">No account? <a href="/register">Register here</a></div>
+    <div class="link" style="margin-top:8px;font-size:.72rem;font-family:'Space Mono',monospace;">
+        Default admin: <span style="color:var(--accent);">admin / admin123</span>
+    </div>
+</div>
+</body>
+</html>

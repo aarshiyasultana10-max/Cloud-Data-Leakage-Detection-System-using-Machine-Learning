@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h2>Dashboard</h2>
+    <p>Welcome back, {{ user }} — DLP Shield v4 active</p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-2 col-6">
+        <div class="stat-card green">
+            <div class="stat-num" id="stat-total">{{ total }}</div>
+            <div class="stat-label">Total Scans</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card red">
+            <div class="stat-num" id="stat-leaks" style="color:#ff6b84;">{{ leaks }}</div>
+            <div class="stat-label">Leaks Found</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card blue">
+            <div class="stat-num" id="stat-safe" style="color:#7eb3ff;">{{ safe }}</div>
+            <div class="stat-label">Safe Files</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card yellow">
+            <div class="stat-num" id="stat-attacks" style="color:#fbbf24;">{{ attacks }}</div>
+            <div class="stat-label">Security Events</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card purple">
+            <div class="stat-num" id="stat-quarantined" style="color:#a78bfa;">{{ quarantined }}</div>
+            <div class="stat-label">Quarantined</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card green">
+            <div class="stat-num" style="font-size:1.2rem;color:var(--accent);">15</div>
+            <div class="stat-label">Detection Rules</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card h-100" style="border-color:rgba(0,255,136,.2);">
+            <div style="font-size:.62rem;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Upload & Scan</div>
+            <div style="font-size:.83rem;font-weight:700;margin-bottom:8px;">File Scanner</div>
+            <p style="color:var(--muted);font-size:.78rem;margin-bottom:14px;line-height:1.6;">Rule-based + ML DLP with risk scoring & auto-quarantine.</p>
+            <a href="/upload" class="btn-accent" style="font-size:.78rem;padding:7px 14px;">Upload File →</a>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100" style="border-color:rgba(139,92,246,.2);">
+            <div style="font-size:.62rem;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Text Scanner</div>
+            <div style="font-size:.83rem;font-weight:700;margin-bottom:8px;">Paste & Detect</div>
+            <p style="color:var(--muted);font-size:.78rem;margin-bottom:14px;line-height:1.6;">Paste any text and instantly detect PII, secrets, API keys.</p>
+            <a href="/scan-text" class="btn-blue" style="font-size:.78rem;padding:7px 14px;">Scan Text →</a>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100" style="border-color:rgba(59,130,246,.2);">
+            <div style="font-size:.62rem;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">File History</div>
+            <div style="font-size:.83rem;font-weight:700;margin-bottom:8px;">Audit Log</div>
+            <p style="color:var(--muted);font-size:.78rem;margin-bottom:14px;line-height:1.6;">View all scanned files with risk scores and ML predictions.</p>
+            <a href="/history" class="btn-outline" style="font-size:.78rem;padding:7px 14px;">View History →</a>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100" style="border-color:rgba(255,59,92,.2);">
+            <div style="font-size:.62rem;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Export</div>
+            <div style="font-size:.83rem;font-weight:700;margin-bottom:8px;">Reports</div>
+            <p style="color:var(--muted);font-size:.78rem;margin-bottom:14px;line-height:1.6;">Download PDF or CSV audit reports of all scan results.</p>
+            <div style="display:flex;gap:6px;">
+                <a href="/export/pdf" class="btn-danger-custom" style="font-size:.72rem;padding:6px 10px;">PDF</a>
+                <a href="/export/csv" class="btn-outline" style="font-size:.72rem;padding:6px 10px;">CSV</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Heatmap -->
+<div class="card mb-4">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;">30-Day Activity Heatmap</div>
+        <span style="font-size:.68rem;color:var(--muted);font-family:'Space Mono',monospace;">file scans per day</span>
+    </div>
+    <div id="heatmap" style="display:flex;gap:3px;flex-wrap:wrap;"></div>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:10px;">
+        <span style="font-size:.65rem;color:var(--muted);font-family:'Space Mono',monospace;">Less</span>
+        <div style="width:10px;height:10px;border-radius:2px;background:#1a1d24;border:1px solid var(--border);"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(0,255,136,.25);"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(0,255,136,.5);"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(0,255,136,.8);"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:#00ff88;"></div>
+        <span style="font-size:.65rem;color:var(--muted);font-family:'Space Mono',monospace;">More</span>
+    </div>
+</div>
+
+<!-- Recent Scans -->
+<div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;">Recent Scans</div>
+        <a href="/history" class="btn-outline" style="font-size:.72rem;padding:5px 12px;">View All</a>
+    </div>
+    {% if recent %}
+    <table class="table-dark-custom">
+        <thead><tr><th>File</th><th>Status</th><th>Risk Score</th><th>ML</th><th>Confidence</th><th>Date</th></tr></thead>
+        <tbody>
+        {% for f in recent %}
+        <tr>
+            <td style="font-family:'Space Mono',monospace;font-size:.76rem;">{{ f['filename'][:28] }}</td>
+            <td><span class="tag {% if f['status']=='Leak' %}tag-leak{% else %}tag-safe{% endif %}">{{ f['status'] }}</span></td>
+            <td>
+                {% set risk = f['risk_score'] if f['risk_score'] else 0 %}
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <div style="width:8px;height:8px;border-radius:50%;background:{% if risk >= 61 %}#ff3b5c{% elif risk >= 31 %}#f59e0b{% else %}#00ff88{% endif %};"></div>
+                    <span style="font-family:'Space Mono',monospace;font-size:.76rem;">{{ risk }}/100</span>
+                </div>
+            </td>
+            <td><span class="tag tag-info">{{ f['ml_prediction'] }}</span></td>
+            <td>
+                <div class="confidence-bar">
+                    <span>{{ f['confidence'] }}%</span>
+                    <div class="progress-bar-custom" style="flex:1;width:60px;">
+                        <div class="progress-fill" style="width:{{ f['confidence'] }}%;background:{% if f['status']=='Leak' %}#ff3b5c{% else %}#00ff88{% endif %};"></div>
+                    </div>
+                </div>
+            </td>
+            <td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:.72rem;">{{ f['uploaded_at'][:16] if f['uploaded_at'] else '—' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align:center;padding:30px;color:var(--muted);font-family:'Space Mono',monospace;font-size:.8rem;">No files scanned yet. <a href="/upload" style="color:var(--accent);">Upload one →</a></div>
+    {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// Live stats
+setInterval(async () => {
+    try {
+        const r = await fetch('/api/stats');
+        const d = await r.json();
+        document.getElementById('stat-total').textContent = d.total;
+        document.getElementById('stat-leaks').textContent = d.leaks;
+        document.getElementById('stat-safe').textContent = d.safe;
+        document.getElementById('stat-attacks').textContent = d.attacks;
+        document.getElementById('stat-quarantined').textContent = d.quarantined;
+    } catch(e) {}
+}, 10000);
+
+// Heatmap
+const activityMap = {{ activity_map | tojson }};
+const heatmapEl = document.getElementById('heatmap');
+const today = new Date();
+for(let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    const count = activityMap[key] || 0;
+    const cell = document.createElement('div');
+    cell.title = `${key}: ${count} scan(s)`;
+    cell.style.cssText = `width:14px;height:14px;border-radius:3px;cursor:default;`;
+    if(count === 0) cell.style.background = '#1a1d24';
+    else if(count === 1) cell.style.background = 'rgba(0,255,136,.25)';
+    else if(count <= 3) cell.style.background = 'rgba(0,255,136,.5)';
+    else if(count <= 6) cell.style.background = 'rgba(0,255,136,.8)';
+    else cell.style.background = '#00ff88';
+    heatmapEl.appendChild(cell);
+}
+</script>
+{% endblock %}

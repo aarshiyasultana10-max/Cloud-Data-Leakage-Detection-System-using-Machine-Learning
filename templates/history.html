@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h2>File History</h2>
+    <p>Complete audit log with risk scores, NER entities and quarantine status</p>
+</div>
+
+<div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;">{{ files|length }} record(s)</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input id="searchBox" placeholder="Search files..." style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 12px;font-size:.78rem;font-family:'Syne',sans-serif;outline:none;width:180px;">
+            <select id="statusFilter" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 12px;font-size:.78rem;font-family:'Syne',sans-serif;outline:none;">
+                <option value="">All Status</option>
+                <option value="Leak">Leak</option>
+                <option value="Safe">Safe</option>
+            </select>
+            <a href="/export/pdf" class="btn-accent" style="font-size:.76rem;padding:7px 12px;">↓ PDF</a>
+            <a href="/export/csv" class="btn-outline" style="font-size:.76rem;padding:7px 12px;">↓ CSV</a>
+        </div>
+    </div>
+
+    {% if files %}
+    <div style="overflow-x:auto;">
+    <table class="table-dark-custom" id="fileTable">
+        <thead>
+            <tr>
+                <th>#</th><th>Filename</th><th>Owner</th><th>Status</th>
+                <th>Risk</th><th>Detections</th><th>ML</th><th>Conf.</th>
+                <th>Quarantined</th><th>Size</th><th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for f in files %}
+        {% set risk = f['risk_score'] if f['risk_score'] else 0 %}
+        <tr class="file-row" data-status="{{ f['status'] }}">
+            <td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:.73rem;">{{ f['id'] }}</td>
+            <td style="font-family:'Space Mono',monospace;font-size:.76rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ f['filename'] }}">{{ f['filename'] }}</td>
+            <td style="font-size:.8rem;">{{ f['owner'] }}</td>
+            <td><span class="tag {% if f['status']=='Leak' %}tag-leak{% else %}tag-safe{% endif %}">{{ f['status'] }}</span></td>
+            <td>
+                <div style="display:flex;align-items:center;gap:5px;">
+                    <div style="width:7px;height:7px;border-radius:50%;background:{% if risk >= 61 %}#ff3b5c{% elif risk >= 31 %}#f59e0b{% else %}#00ff88{% endif %};flex-shrink:0;"></div>
+                    <span style="font-family:'Space Mono',monospace;font-size:.74rem;">{{ risk }}</span>
+                </div>
+            </td>
+            <td style="max-width:140px;">
+                {% if f['rule_detections'] %}
+                    {% for d in f['rule_detections'].split(',') %}
+                        {% if d.strip() %}<span class="tag tag-warn" style="font-size:.6rem;margin:1px;">{{ d.strip() }}</span>{% endif %}
+                    {% endfor %}
+                {% else %}<span style="color:var(--muted);font-size:.76rem;">None</span>{% endif %}
+            </td>
+            <td><span class="tag tag-info" style="font-size:.66rem;">{{ f['ml_prediction'] }}</span></td>
+            <td>
+                <div style="display:flex;align-items:center;gap:5px;">
+                    <span style="font-size:.73rem;font-family:'Space Mono',monospace;min-width:34px;">{{ f['confidence'] }}%</span>
+                    <div class="progress-bar-custom" style="width:50px;">
+                        <div class="progress-fill" style="width:{{ f['confidence'] }}%;background:{% if f['status']=='Leak' %}#ff3b5c{% else %}#00ff88{% endif %};"></div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                {% if f['quarantined'] %}
+                <span class="tag tag-warn" style="font-size:.62rem;">🔒 Yes</span>
+                {% else %}
+                <span style="color:var(--muted);font-size:.74rem;">—</span>
+                {% endif %}
+            </td>
+            <td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:.7rem;">
+                {% if f['file_size'] %}{{ (f['file_size']/1024)|round(1) }}KB{% else %}—{% endif %}
+            </td>
+            <td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:.7rem;">{{ f['uploaded_at'][:16] if f['uploaded_at'] else '—' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:46px;color:var(--muted);font-family:'Space Mono',monospace;font-size:.82rem;">
+        No files scanned yet. <a href="/upload" style="color:var(--accent);">Upload one →</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function filterTable() {
+    const q = document.getElementById('searchBox').value.toLowerCase();
+    const st = document.getElementById('statusFilter').value;
+    document.querySelectorAll('.file-row').forEach(row => {
+        const matchText = row.textContent.toLowerCase().includes(q);
+        const matchStatus = !st || row.dataset.status === st;
+        row.style.display = (matchText && matchStatus) ? '' : 'none';
+    });
+}
+document.getElementById('searchBox').addEventListener('input', filterTable);
+document.getElementById('statusFilter').addEventListener('change', filterTable);
+</script>
+{% endblock %}

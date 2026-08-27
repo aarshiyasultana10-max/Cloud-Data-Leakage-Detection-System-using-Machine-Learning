@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h2>API Documentation</h2>
+    <p>DLP Shield REST API — integrate DLP scanning into any application</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-8">
+        <!-- Endpoint 1: POST /api/scan -->
+        <div class="card mb-4">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+                <span style="background:rgba(0,255,136,.15);color:var(--accent);border:1px solid rgba(0,255,136,.3);border-radius:6px;padding:3px 10px;font-size:.72rem;font-family:'Space Mono',monospace;font-weight:700;">POST</span>
+                <span style="font-family:'Space Mono',monospace;font-size:.88rem;font-weight:700;">/api/scan</span>
+            </div>
+            <p style="color:var(--muted);font-size:.82rem;margin-bottom:16px;">Scan text for data leaks using rule-based patterns + ML classification + NER. Returns risk score and detected patterns.</p>
+
+            <div style="margin-bottom:12px;">
+                <div style="font-size:.68rem;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Request Body</div>
+                <pre style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Space Mono',monospace;font-size:.76rem;color:var(--text);overflow-x:auto;margin:0;">{
+  "text": "My email is test@example.com and aadhaar is 1234 5678 9012"
+}</pre>
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <div style="font-size:.68rem;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Response (200 OK)</div>
+                <pre style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Space Mono',monospace;font-size:.76rem;color:var(--text);overflow-x:auto;margin:0;">{
+  "status": "leak",
+  "rules": ["Email", "Aadhaar"],
+  "ml_prediction": "leak",
+  "confidence": 91.4,
+  "risk_score": 55,
+  "ner_entities": ["test [ORG]"]
+}</pre>
+            </div>
+
+            <div>
+                <div style="font-size:.68rem;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">cURL Example</div>
+                <pre style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Space Mono',monospace;font-size:.74rem;color:#7eb3ff;overflow-x:auto;margin:0;">curl -X POST http://localhost:5000/api/scan \
+  -H "Content-Type: application/json" \
+  -d '{"text": "password=admin123 email user@corp.com"}'</pre>
+            </div>
+        </div>
+
+        <!-- Endpoint 2: GET /api/stats -->
+        <div class="card mb-4">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+                <span style="background:rgba(59,130,246,.15);color:#7eb3ff;border:1px solid rgba(59,130,246,.3);border-radius:6px;padding:3px 10px;font-size:.72rem;font-family:'Space Mono',monospace;font-weight:700;">GET</span>
+                <span style="font-family:'Space Mono',monospace;font-size:.88rem;font-weight:700;">/api/stats</span>
+            </div>
+            <p style="color:var(--muted);font-size:.82rem;margin-bottom:14px;">Returns live system statistics — total scans, leaks detected, safe files, security events, and quarantine count.</p>
+            <div>
+                <div style="font-size:.68rem;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Response (200 OK)</div>
+                <pre style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Space Mono',monospace;font-size:.76rem;color:var(--text);overflow-x:auto;margin:0;">{
+  "total": 42,
+  "leaks": 15,
+  "safe": 27,
+  "attacks": 8,
+  "quarantined": 15
+}</pre>
+            </div>
+        </div>
+
+        <!-- Live API Tester -->
+        <div class="card">
+            <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;">Live API Tester</div>
+            <textarea id="apiInput" rows="4" placeholder='{"text": "Your text to scan..."}' style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:12px;font-family:'Space Mono',monospace;font-size:.76rem;outline:none;resize:vertical;margin-bottom:10px;"></textarea>
+            <div style="display:flex;gap:8px;margin-bottom:14px;">
+                <button onclick="runApiTest()" class="btn-accent" style="font-size:.8rem;padding:8px 18px;">▶ Send Request</button>
+                <button onclick="document.getElementById('apiInput').value=''; document.getElementById('apiOutput').textContent='Response will appear here...'; document.getElementById('apiOutput').style.color='var(--muted)';" class="btn-outline" style="font-size:.78rem;padding:8px 16px;">Clear</button>
+            </div>
+            <div style="font-size:.68rem;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Response</div>
+            <pre id="apiOutput" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Space Mono',monospace;font-size:.76rem;color:var(--muted);min-height:100px;overflow-x:auto;margin:0;white-space:pre-wrap;">Response will appear here...</pre>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Endpoints list -->
+        <div class="card mb-4">
+            <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;">All Endpoints</div>
+            {% for method, path, desc in [
+                ('POST','/api/scan','Scan text for leaks'),
+                ('GET','/api/stats','System statistics'),
+                ('POST','/upload','Upload & scan file'),
+                ('GET','/history','Scan history'),
+                ('GET','/export/pdf','Download PDF report'),
+                ('GET','/export/csv','Download CSV export')
+            ] %}
+            <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">
+                <span style="background:{% if method=='POST' %}rgba(0,255,136,.12){% else %}rgba(59,130,246,.12){% endif %};color:{% if method=='POST' %}var(--accent){% else %}#7eb3ff{% endif %};border-radius:4px;padding:1px 7px;font-size:.64rem;font-family:'Space Mono',monospace;font-weight:700;flex-shrink:0;">{{ method }}</span>
+                <div>
+                    <div style="font-family:'Space Mono',monospace;font-size:.72rem;font-weight:700;">{{ path }}</div>
+                    <div style="font-size:.7rem;color:var(--muted);margin-top:2px;">{{ desc }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Risk Score Guide -->
+        <div class="card mb-4">
+            <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;">Risk Score Guide</div>
+            {% for color, label, range_ in [('#ff6b84','HIGH RISK','61–100'),('#fbbf24','MEDIUM RISK','31–60'),('#00ff88','LOW RISK','0–30')] %}
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                <div style="width:12px;height:12px;border-radius:50%;background:{{ color }};flex-shrink:0;"></div>
+                <div>
+                    <div style="font-size:.72rem;font-weight:700;color:{{ color }};">{{ label }}</div>
+                    <div style="font-size:.68rem;color:var(--muted);font-family:'Space Mono',monospace;">Score: {{ range_ }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Detection Patterns -->
+        <div class="card">
+            <div style="font-size:.7rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;">Detection Rules (15)</div>
+            {% for r in ['Email','Phone','Credit Card','Aadhaar','PAN Card','Passport','SSN','Bank Account','API Key','JWT Token','Voter ID','Env Secret','Private Key','Password','ML Model'] %}
+            <span class="tag tag-info" style="font-size:.62rem;margin:2px;">{{ r }}</span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+async function runApiTest() {
+    const input = document.getElementById('apiInput').value.trim();
+    const out = document.getElementById('apiOutput');
+    if(!input) { out.textContent = 'Error: Please enter a JSON body'; out.style.color='#ff6b84'; return; }
+    try {
+        JSON.parse(input);
+    } catch(e) {
+        out.textContent = 'Error: Invalid JSON — ' + e.message;
+        out.style.color = '#ff6b84'; return;
+    }
+    out.textContent = 'Sending request...'; out.style.color = '#fbbf24';
+    try {
+        const r = await fetch('/api/scan', {method:'POST', headers:{'Content-Type':'application/json'}, body:input});
+        const d = await r.json();
+        out.textContent = JSON.stringify(d, null, 2);
+        out.style.color = d.status === 'leak' ? '#ff6b84' : '#00ff88';
+    } catch(e) {
+        out.textContent = 'Request failed: ' + e.message;
+        out.style.color = '#ff6b84';
+    }
+}
+</script>
+{% endblock %}

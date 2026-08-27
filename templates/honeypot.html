@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><title>403 Forbidden</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg:#0a0c10;--accent2:#ff3b5c;--text:#e8eaf0;--muted:#6b7280;}
+        body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;}
+        .wrap{max-width:500px;padding:0 20px;}
+        h1{font-size:5rem;font-weight:800;color:var(--accent2);line-height:1;}
+        h2{font-size:1.3rem;font-weight:700;margin:12px 0 8px;}
+        p{color:var(--muted);font-family:'Space Mono',monospace;font-size:.78rem;line-height:1.8;}
+        .alert{background:rgba(255,59,92,.08);border:1px solid rgba(255,59,92,.25);border-radius:10px;padding:16px;margin:20px 0;font-family:'Space Mono',monospace;font-size:.76rem;color:#ff6b84;text-align:left;}
+        a{display:inline-block;margin-top:16px;background:var(--accent2);color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.84rem;}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h1>403</h1>
+    <h2>Access Forbidden</h2>
+    <p>You attempted to access a restricted area.<br>This activity has been recorded.</p>
+    <div class="alert">
+        ⚠ HONEYPOT TRIGGERED<br>
+        Your IP, session and timestamp have been logged.<br>
+        Security team has been notified.
+    </div>
+    <a href="/dashboard">Return to Safety</a>
+</div>
+</body>
+</html>
