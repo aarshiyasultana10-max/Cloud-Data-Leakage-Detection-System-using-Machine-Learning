@@ -1,125 +1,302 @@
-# Cloud Data Leakage Detection System Using Machine Learning
+# ☁️ Cloud Data Leakage Detection System Using Machine Learning
 
-## 📌 Overview
+A web-based **Data Loss Prevention (DLP)** system that uses **Machine Learning, NLP, and rule-based detection** to identify and prevent potential leakage of sensitive information from text and uploaded documents.
 
-Cloud Data Leakage Detection System Using Machine Learning is a web-based Data Loss Prevention (DLP) system designed to identify and prevent the accidental leakage of sensitive information from text and uploaded documents.
+## 🎯 Objective
 
-The system combines rule-based detection, machine learning, and Named Entity Recognition (NER) to analyze content and determine whether it contains potentially sensitive information.
+The main objective of this project is to detect sensitive information such as personal, financial, and confidential data before it can be unintentionally exposed.
 
-## 🎯 Objectives
+The system analyzes text and documents and classifies them as **SAFE** or **potential LEAK**, assigns a risk score, and quarantines suspicious files for administrator review.
 
-- Detect sensitive and confidential information.
-- Identify potential data leakage in text and documents.
-- Use machine learning to classify content as Safe or Leak.
-- Calculate a risk score for detected content.
-- Encrypt and quarantine potentially leaked files.
-- Maintain security and scan history.
-- Provide administrators with monitoring and management capabilities.
+---
 
-## 🔍 Sensitive Data Detection
+## 🚀 Key Features
 
-The system uses rule-based pattern detection to identify information such as:
+* 🔍 **Text Scanning** – Detect sensitive information from user-entered text.
+* 📄 **File Scanning** – Analyze PDF, DOCX and TXT files.
+* 🧩 **Rule-Based Detection** – Regex-based detection of PII and secrets.
+* 🤖 **Machine Learning** – Classify content as Safe or Leak.
+* 🌲 **Random Forest** – Primary ML classification model.
+* 📊 **TF-IDF** – Convert text into numerical features.
+* 🧠 **NER** – Identify entities using spaCy.
+* 📈 **Risk Scoring** – Generate a risk score from 0–100.
+* 🔒 **File Encryption** – Encrypt potentially sensitive files.
+* 🚨 **Quarantine** – Isolate potential data leaks for admin review.
+* 🛡️ **Security Monitoring** – Attack logs, failed-login protection and honeypot.
+* 👨‍💼 **Admin Dashboard** – Monitor users, scans, risks and security events.
+* 📚 **Scan History & Analytics** – Track previous scanning activity.
+* 🔌 **REST API** – Enable programmatic text scanning.
+* 📑 **Reporting** – Export security information to PDF and CSV.
 
-- Email addresses
-- Phone numbers
-- Aadhaar numbers
-- PAN numbers
-- Credit card numbers
-- Bank account numbers
-- Passport numbers
-- SSN
-- API keys
-- JWT tokens
-- Passwords and secrets
-- Private keys
-- Voter ID
+---
 
-> Note: Pattern-based detection identifies information that matches sensitive-data formats. It does not verify whether the identified number is genuine or belongs to a real person.
+## 🛠️ Tech Stack
 
-## 🤖 Machine Learning
+### Backend
 
-The system uses machine learning to classify content as potentially **SAFE** or **LEAK**.
+* **Python**
+* **Flask**
 
-### Text Processing
+### Machine Learning & NLP
 
-Text is converted into numerical features using **TF-IDF (Term Frequency-Inverse Document Frequency)**.
+* **Scikit-learn**
+* **TF-IDF**
+* **Random Forest**
+* **Logistic Regression**
+* **Support Vector Machine (SVM)**
+* **spaCy / NER**
+* **Regular Expressions**
 
-### Machine Learning Models
+### File Processing & Security
 
-The project includes:
+* **PyPDF2**
+* **python-docx**
+* **Cryptography / Fernet**
+* **SQLite**
 
-- Random Forest
-- Logistic Regression
-- Support Vector Machine (SVM)
+### Frontend
 
-Random Forest is used as the primary classifier during the scanning process.
+* **HTML5**
+* **CSS3**
+* **JavaScript**
+
+### Development
+
+* **Git**
+* **GitHub**
+* **Python Virtual Environment**
+
+---
+
+## 🧠 Machine Learning Approach
+
+The system uses **TF-IDF** for text feature extraction and multiple classification algorithms:
+
+```text
+Input Text
+    ↓
+Text Preprocessing
+    ↓
+TF-IDF Vectorization
+    ↓
+┌──────────────┬──────────────┬──────────────┐
+│ Random Forest│   Logistic   │     SVM      │
+│              │  Regression  │              │
+└──────────────┴──────────────┴──────────────┘
+                    ↓
+              SAFE / LEAK
+```
+
+**Random Forest** is used as the primary classifier in the scanning workflow.
 
 The models can be evaluated using:
 
-- Accuracy
-- Precision
-- Recall
-- F1 Score
+* Accuracy
+* Precision
+* Recall
+* F1 Score
 
-## 🧠 Named Entity Recognition
+---
 
-The system uses **spaCy Named Entity Recognition (NER)** to identify entities in the scanned content, including:
+## 🔍 Detection Workflow
 
-- PERSON
-- ORGANIZATION
-- LOCATION/GPE
-- MONEY
-- CARDINAL
+```text
+User
+ ↓
+Text Input / File Upload
+ ↓
+Text Extraction
+ ↓
+┌────────────┬────────────┬────────────┐
+│   Regex    │     ML     │    NER     │
+│ Detection  │ Detection  │  (spaCy)   │
+└────────────┴────────────┴────────────┘
+             ↓
+        Risk Analysis
+             ↓
+       Risk Score 0–100
+             ↓
+       ┌─────┴─────┐
+       ↓           ↓
+     SAFE         LEAK
+                    ↓
+               Encryption
+                    ↓
+               Quarantine
+                    ↓
+              Admin Review
+```
 
-NER provides additional contextual information during analysis.
+---
 
-## 📊 Risk Scoring
+## 🔐 Sensitive Data Detection
 
-After scanning, the system generates a risk score from **0 to 100**.
+The system can detect patterns associated with:
 
-The score considers factors such as:
+* Email addresses
+* Phone numbers
+* Aadhaar numbers
+* PAN numbers
+* Credit card numbers
+* Bank account numbers
+* Passport numbers
+* SSN patterns
+* API keys
+* JWT tokens
+* Passwords and secrets
+* Private keys
+* Voter ID patterns
 
-- Rule-based detections
-- Machine learning prediction
-- ML confidence
-- File-related characteristics
+> **Note:** Pattern-based detection identifies data that resembles a sensitive format. It does not verify whether identifiers such as Aadhaar or PAN numbers are genuine.
 
-The system categorizes detected content according to its calculated risk.
+---
 
-## 🔐 File Protection and Quarantine
+## 🚨 Risk & Quarantine
 
-When an uploaded file is identified as a potential data leak, the system can:
-
-1. Detect sensitive information.
-2. Calculate the risk score.
-3. Classify the file as a potential leak.
-4. Encrypt the file using Fernet encryption.
-5. Move the file to the quarantine area.
-6. Record the event for administrator review.
-
-This prevents potentially sensitive files from continuing through the normal workflow until they have been reviewed.
-
-## 📄 Supported File Processing
-
-The system can process text from common document formats such as:
-
-- PDF
-- DOCX
-- TXT
+When potentially sensitive information is detected, the system calculates a risk score.
 
 For example:
 
 ```text
-Uploaded File
-     ↓
-Text Extraction
-     ↓
-Sensitive Data Detection
-     ↓
-ML Classification
-     ↓
-NER Analysis
-     ↓
-Risk Score
-     ↓
-SAFE / LEAK
+Risk Score: 55 / 100
+Risk Level: Medium Risk
+ML Prediction: LEAK
+Confidence: 58.7%
+```
+
+If a file is classified as a potential leak:
+
+```text
+File
+ ↓
+Detection
+ ↓
+Risk Analysis
+ ↓
+LEAK
+ ↓
+Fernet Encryption
+ ↓
+Quarantine
+ ↓
+Administrator Review
+```
+
+This provides an additional layer of protection against accidental data exposure.
+
+---
+
+## 🛡️ Security Features
+
+The application includes:
+
+* User registration and login
+* Password hashing
+* Failed-login protection
+* Account locking
+* Attack logging
+* Honeypot monitoring
+* File encryption
+* File quarantine
+* Scan history
+* Admin dashboard
+* Security analytics
+
+---
+
+## 📂 Project Structure
+
+```text
+Cloud-Data-Leakage-Detection-System-using-Machine-Learning/
+│
+├── app.py
+├── requirements.txt
+├── .gitignore
+├── static/
+├── templates/
+│   ├── admin.html
+│   ├── dashboard.html
+│   ├── history.html
+│   ├── scan_text.html
+│   ├── upload.html
+│   └── ...
+│
+├── uploads/
+└── quarantine/
+```
+
+Runtime files such as the local database, uploads, quarantine files and virtual environment are excluded from GitHub using `.gitignore`.
+
+---
+
+## ⚙️ How to Run
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/aarshiyasultana10-max/Cloud-Data-Leakage-Detection-System-using-Machine-Learning.git
+```
+
+### 2. Enter the project directory
+
+```bash
+cd Cloud-Data-Leakage-Detection-System-using-Machine-Learning
+```
+
+### 3. Create a virtual environment
+
+```bash
+python -m venv venv
+```
+
+### 4. Activate it
+
+**Windows:**
+
+```cmd
+venv\Scripts\activate
+```
+
+### 5. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 6. Run the application
+
+```bash
+python app.py
+```
+
+### 7. Open in browser
+
+```text
+http://127.0.0.1:5000
+```
+
+---
+
+## 🔮 Future Enhancements
+
+* ☁️ Deploy on AWS / Azure / Google Cloud
+* 🔄 Real-time cloud storage monitoring
+* 📧 Email and file-sharing DLP integration
+* 🧠 Advanced deep-learning models
+* 🎯 Context-aware PII detection
+* 📉 Reduce false positives
+* 🔐 Advanced role-based access control
+* 🚨 Real-time security alerts
+* 📊 Advanced threat analytics
+
+---
+
+## 👩‍💻 Author
+
+**Arshiya Sultana**
+
+Bachelor of Engineering — Artificial Intelligence and Data Science
+
+**Project:** Cloud Data Leakage Detection System Using Machine Learning
+
+**Domain:** Cybersecurity • Machine Learning • NLP • Data Loss Prevention
